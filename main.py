@@ -23,8 +23,8 @@ np.set_printoptions(threshold=sys.maxsize, linewidth=sys.maxsize)
 
 matplotlib.use("Agg")  # Pycharm debugging purposes.
 
-logging.getLogger('matplotlib').setLevel(logging.WARNING)  # Debug
-logging.getLogger('PIL').setLevel(logging.WARNING)  # Debug
+logging.getLogger("matplotlib").setLevel(logging.WARNING)  # Debug
+logging.getLogger("PIL").setLevel(logging.WARNING)  # Debug
 
 # RESOLUTION = 2, 2
 # RESOLUTION = 4, 4
@@ -79,6 +79,7 @@ def equation(indices: np.ndarray):
     x, y = indices.astype(np.float64)
     return np.array([np.rad2deg(2*np.pi*x), np.zeros(y.shape)])
 """
+
 
 def equation(indices: np.ndarray, step: int = 16) -> np.ndarray:
     x, y = indices.astype(np.float64)
@@ -138,7 +139,12 @@ if __name__ == "__main__":
     reset_storage("./examples/advection_storage")
     reset_storage("./examples/velocity_storage")
 
-    archive_storage("./examples/rendered_fluids", f"./examples/archive/archived_fluids/archived_fluids_{int(time.time())}")
-    archive_storage("./examples/rendered_velocities", f"./examples/archive/archived_velocities/archived_velocities_{int(time.time())}")
+    archive_storage(
+        "./examples/rendered_fluids", f"./examples/archive/archived_fluids/archived_fluids_{int(time.time())}"
+    )
+    archive_storage(
+        "./examples/rendered_velocities",
+        f"./examples/archive/archived_velocities/archived_velocities_{int(time.time())}",
+    )
     main(frames=100, timestep=1 / 240)
     logger.info(f"Fluid rendered in {time.time() - start:.2f} seconds.")

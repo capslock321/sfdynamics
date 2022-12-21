@@ -14,10 +14,7 @@ logger = logging.getLogger(__name__)
 
 
 class FluidDynamics(object):
-
-    def __init__(self,
-                 inflow_quantity: np.ndarray,
-                 velocity_field: np.ndarray = None):
+    def __init__(self, inflow_quantity: np.ndarray, velocity_field: np.ndarray = None):
         """A Python implementation of a fluid dynamics solver.
 
         The inflow_quantity is a 2D array that represents the initial
@@ -35,8 +32,7 @@ class FluidDynamics(object):
         """
         self.inflow_quantity: np.ndarray = inflow_quantity
         # self.coordinates: np.ndarray = np.indices(inflow_quantity.shape)
-        self.coordinates: np.ndarray = self._build_coordinates(
-            inflow_quantity.shape)
+        self.coordinates: np.ndarray = self._build_coordinates(inflow_quantity.shape)
 
         self.current_timestamp: float = 0.0
         if velocity_field is not None:
@@ -49,7 +45,7 @@ class FluidDynamics(object):
 
         This is used to create the coordinates for the velocity field. The shape of
         the coordinate plane is based off the dye field's shape. The field is split in half
-        to allow velocity advection using negitive numbers.
+        to allow velocity advection using negative numbers.
 
         Args:
             coordinates_shape (np.ndarray): The resulting coordinate plane's shape.
@@ -58,7 +54,7 @@ class FluidDynamics(object):
             np.ndarray: The built coordinate plane.
         """
         midpoint = [axis // 2 for axis in coordinates_shape]  # x // 2, y // 2
-        return np.mgrid[-midpoint[0]:midpoint[0], -midpoint[1]:midpoint[1]]
+        return np.mgrid[-midpoint[0] : midpoint[0], -midpoint[1] : midpoint[1]]
 
     def enforce_velocity_boundaries(self, U: np.ndarray, V: np.ndarray):
         # Very dirty implementation
@@ -73,8 +69,7 @@ class FluidDynamics(object):
         V[:, V.shape[1] - 1] = -V[:, V.shape[1] - 2]
         return U, V
 
-    def advect(self, field: np.ndarray, indices: np.ndarray,
-               timestep: float) -> np.ndarray:
+    def advect(self, field: np.ndarray, indices: np.ndarray, timestep: float) -> np.ndarray:
         """Advects the given field given a list of coordinates.
 
         This uses the implicit euler method to advect the field. The timestep is multiplied
@@ -90,13 +85,11 @@ class FluidDynamics(object):
             np.ndarray: The advected field. The resulting shape is the same as the field.
         """
         # This uses the backwards Euler method. (implicit Euler)
-        delta_t = timestep * np.min(
-            self.inflow_quantity.shape)  # Some speedup in simulation time
+        delta_t = timestep * np.min(self.inflow_quantity.shape)  # Some speedup in simulation time
         advection_coordinates = self.coordinates - (indices * delta_t)
 
         # Bilerp the velocity fields, then apply the difference to the field.
-        return Interpolation.bilinear_interpolation(field,
-                                                    advection_coordinates)
+        return Interpolation.bilinear_interpolation(field, advection_coordinates)
 
     def step(self, timestep: float = 1 / 240) -> Tuple[np.ndarray, np.ndarray]:
         """Steps forward in time.
@@ -121,8 +114,7 @@ class FluidDynamics(object):
         advected_v = self.advect(v_velocity, self.velocity_field, timestep)
         # comment out velocity_field update line to stop advecting velocity field. DEBUG!
         self.velocity_field = np.array([advected_u, advected_v])
-        self.inflow_quantity = self.advect(self.inflow_quantity,
-                                           self.velocity_field, timestep)
+        self.inflow_quantity = self.advect(self.inflow_quantity, self.velocity_field, timestep)
 
         logger.debug(f"Stepping forward with timestep {timestep:.4f}.")
         self.current_timestamp = self.current_timestamp + timestep
@@ -144,9 +136,7 @@ class FluidDynamics(object):
         image = Image.fromarray(fluid_map * 255).convert("RGB")
         return image.save(output_path)
 
-    def build_plot(self,
-                   output_path: Union[Path, str],
-                   grid_step: int = 2) -> None:
+    def build_plot(self, output_path: Union[Path, str], grid_step: int = 2) -> None:
         """Visualizes the velocity field.
 
         Args:

@@ -85,7 +85,7 @@ class Interpolation(object):
         [(5, 4), (6, 4), (5, 5), (6, 5)].
 
         Next, we need to get the value of the field at those coordinates. eg. field[5, 4],
-        field[5, 5], field[6, 4] and field[6, 5]. Those will the the values we are going to be interpolating.
+        field[5, 5], field[6, 4] and field[6, 5]. Those will be the values we are going to be interpolating.
         We then preform bilinear interpolation on the 4 returned values by preforming linear
         interpolation on the bottom two coordinates, field[5, 4] and field[5, 5].
         We then do the same for the other two. (field[6, 4], field[6, 5]).
