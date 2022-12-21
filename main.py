@@ -12,7 +12,7 @@ import imageio
 import matplotlib
 import numpy as np
 
-from fluid import FluidDynamics
+from sfdynamics import FluidDynamics
 
 logger = logging.getLogger(__name__)
 
@@ -189,8 +189,8 @@ def main(frames: int = 100, timestep: float = 1 / 240):
     fluid = FluidDynamics(inflow_dye)
     fluid.velocity_field = equation(fluid.coordinates, 8)
 
-    fluid.render_fluid("./out/initial_position.png")
-    fluid.build_plot("./out/initial_field.png", grid_step=4)
+    fluid.render_fluid("./examples/initial_position.png")
+    fluid.build_plot("./examples/initial_field.png", grid_step=4)
     logger.debug(f"Velocity Map:\n{fluid.velocity_field}")
     for iteration in range(frames):
         logger.info(f"\x1b[0;33mCurrently rendering frame number {iteration + 1} of {frames}.\x1b[0;0m")
@@ -199,24 +199,24 @@ def main(frames: int = 100, timestep: float = 1 / 240):
         fluid.step(timestep=timestep)
         # fluid.velocity_field -= equation(fluid.velocity_field) * timestep
         # Be careful using large time-steps. It will "blow up".
-        # fluid.build_plot(f"./out/velocity_maps/velocity_{iteration}.png", grid_step=4)
-        fluid.render_fluid(f"./out/advection_storage/fluid_{iteration}.png")
+        # fluid.build_plot(f"./examples/velocity_storage/velocity_{iteration}.png", grid_step=4)
+        fluid.render_fluid(f"./examples/advection_storage/fluid_{iteration}.png")
         logger.info(f"Seconds elapsed: {time.time() - start:.2f} seconds.")
 
-    fluid_output = f"./out/rendered_fluids/output_{int(time.time())}.gif"
-    # velocity_output = f"./out/velocity_outputs/velocity_{int(time.time())}.gif"
-    render_gif("./out/advection_storage", fluid_output)
-    # render_gif("./out/velocity_maps", velocity_output)
+    fluid_output = f"./examples/rendered_fluids/output_{int(time.time())}.gif"
+    # velocity_output = f"./examples/rendered_velocities/velocity_{int(time.time())}.gif"
+    render_gif("./examples/advection_storage", fluid_output)
+    # render_gif("./examples/velocity_storage", velocity_output)
 
 
 if __name__ == "__main__":
     start = time.time()
     logger.info(f"Rendering fluid with shape {inflow_dye.shape}.")
     # The GPU is not being used by Python.
-    reset_storage("./out/advection_storage")
-    reset_storage("./out/velocity_maps")
+    reset_storage("./examples/advection_storage")
+    reset_storage("./out/velocity_storage")
 
-    archive_storage("./out/rendered_fluids", f"./out/archive/archived_fluids/archived_fluids_{int(time.time())}")
-    archive_storage("./out/velocity_outputs", f"./out/archive/archived_velocities/archived_velocities_{int(time.time())}")
+    archive_storage("./examples/rendered_fluids", f"./examples/archive/archived_fluids/archived_fluids_{int(time.time())}")
+    archive_storage("./examples/rendered_velocities", f"./examples/archive/archived_velocities/archived_velocities_{int(time.time())}")
     main(frames=100, timestep=1 / 240)
     logger.info(f"Fluid rendered in {time.time() - start:.2f} seconds.")
