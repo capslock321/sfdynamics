@@ -76,12 +76,20 @@ class Interpolation(object):
         In order to get the four points around a point, we need to floor the values.
 
         Note: Why not just convert to an integer? A: Because floor vs int are different when dealing
-        with negative numbers. Using int vs floor will return very different results. % 1 is used to ease the transition
-        between negative and positive numbers.
+        with negative number. Int will return the number closest to 0, for example, -7.24
+        will be converted into -7. Floor on the other hand, gets the next lowest number, so -7.24 gets
+        converted into -8. Using int vs floor will return very different results.
 
-        For example, (5.667, 4.563) will become (5, 4). Then we get the four points around (5, 4). Using
-        those four points, we get the values from field at those four coordinates. Finally, we lerp the four values
-        and put the resulting number (should be between 0 and 1) into the new field.
+        For example, (5.667, 4.563) will become (5, 4). In order to preform bilinear interpolation, we
+        must get at least 4 coordinates around (5, 4). In this case, those coordinates would be the following:
+        [(5, 4), (6, 4), (5, 5), (6, 5)].
+
+        Next, we need to get the value of the field at those coordinates. eg. field[5, 4],
+        field[5, 5], field[6, 4] and field[6, 5]. Those will the the values we are going to be interpolating.
+        We then preform bilinear interpolation on the 4 returned values by preforming linear
+        interpolation on the bottom two coordinates, field[5, 4] and field[5, 5].
+        We then do the same for the other two. (field[6, 4], field[6, 5]).
+
 
         Args:
             field: The color field. This field is what is converted into the final image.
@@ -90,30 +98,19 @@ class Interpolation(object):
         Returns:
             np.ndarray: The new color field.
         """
-        # coordinates = np.array([coordinates[0] - padding[0], coordinates[1] - padding[1]])
-        coordinates_x, coordinates_y = np.floor(coordinates).astype(int)  # This floors the values.
-
-        # coordinates = np.array([coordinates[0] - padding[0], coordinates[1] - padding[1]])
+        coordinates_x, coordinates_y = np.floor(coordinates).astype(int)
 
         padding_x = np.clip(coordinates[0] - coordinates_x, 0, 1)
         padding_y = np.clip(coordinates[1] - coordinates_y, 0, 1)
 
-        top_left = cls.value_at(field, coordinates_x + 0, coordinates_y + 0)  # x00
-        top_right = cls.value_at(field, coordinates_x + 1, coordinates_y + 0)  # x10
-        bottom_left = cls.value_at(field, coordinates_x + 0, coordinates_y + 1)  # x01
-        bottom_right = cls.value_at(field, coordinates_x + 1, coordinates_y + 1)  # x11
-
-        # top_left is the default position
-        # logger.debug(f"Coordinates X:\n{coordinates[0]}\nCoordinates Y:\n{coordinates[1]}")
-        # logger.debug(f"Rounded X:\n{coordinates_x}\nRounded Y:\n{coordinates_y}")
-        # logger.debug(f"Top Right:\n{top_right}\nBottom Right:\n{bottom_right}")
-        # logger.debug(f"Top Left:\n{top_left}\nBottom Left:\n{bottom_left}")
-        # logger.debug(f"Padding X:\n{padding_x}\nPadding Y:\n{padding_y}")
+        bottom_left = cls.value_at(field, coordinates_x + 0, coordinates_y + 0)  # x00
+        bottom_right = cls.value_at(field, coordinates_x + 1, coordinates_y + 0)  # x10
+        top_left = cls.value_at(field, coordinates_x + 0, coordinates_y + 1)  # x01
+        top_right = cls.value_at(field, coordinates_x + 1, coordinates_y + 1)  # x11
 
         # 0.5 samples the color at the middle of the cell rather than bottom right
         # But for velocity, aka U and V, the padding must be (0.0, 0.5) and (0.5, 0.0) respectively.
         top_lerp = cls.linear_interpolation(top_left, top_right, padding_x)
         bottom_lerp = cls.linear_interpolation(bottom_left, bottom_right, padding_x)
 
-        # logger.debug(f"Top Lerp:\n{top_lerp}\nBottom Lerp:\n{bottom_lerp}")
-        return cls.linear_interpolation(top_lerp, bottom_lerp, padding_y)
+        return cls.linear_interpolation(bottom_lerp, top_lerp, padding_y)
