@@ -214,7 +214,7 @@ if __name__ == "__main__":
     logger.info(f"Rendering fluid with shape {inflow_dye.shape}.")
     # The GPU is not being used by Python.
     reset_storage("./examples/advection_storage")
-    reset_storage("./out/velocity_storage")
+    reset_storage("./examples/velocity_storage")
 
     archive_storage("./examples/rendered_fluids", f"./examples/archive/archived_fluids/archived_fluids_{int(time.time())}")
     archive_storage("./examples/rendered_velocities", f"./examples/archive/archived_velocities/archived_velocities_{int(time.time())}")
