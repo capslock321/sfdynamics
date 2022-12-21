@@ -129,10 +129,7 @@ dmypy.json
 .pyre/
 
 # Output frames
-/out/advection_storage/
-/out/archive/
-/out/rendered_fluids/
-/out/velocity_maps/
+/examples
 
 # Idea files
 .idea
