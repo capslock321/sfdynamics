@@ -14,6 +14,7 @@ logger = logging.getLogger(__name__)
 
 
 class FluidDynamics(object):
+
     def __init__(self, inflow_quantity: np.ndarray, velocity_field: np.ndarray = None):
         """A Python implementation of a fluid dynamics solver.
 
@@ -72,13 +73,13 @@ class FluidDynamics(object):
     def advect(self, field: np.ndarray, indices: np.ndarray, timestep: float) -> np.ndarray:
         """Advects the given field given a list of coordinates.
 
-        This uses the implicit euler method to advect the field. The timestep is multiplied
+        This uses the implicit (backwards) Euler method to advect the field. The timestep is multiplied
         by the smallest value in the shape of the dye field to help speed up how fast the
         fluid is advected.
 
         Args:
             field (np.ndarray): The field to advect. The field requires a 2D array.
-            indices (np.ndarray): The coordinates of each particle. This requires an np.indices like shape.
+            indices (np.ndarray): The coordinates of each particle. This requires a np.indices like shape.
             timestep (float): The timestep.
 
         Returns:
