@@ -132,8 +132,7 @@ class FluidDynamics(object):
         Args:
             output_path: The location to save the rendered frame to.
 
-        """
-        fluid_map = np.clip(self.inflow_quantity, 0, 1)
+        """        fluid_map = np.rollaxis(np.clip(self.inflow_quantity, 0, 1), 1)
         image = Image.fromarray(fluid_map * 255).convert("RGB")
         return image.save(output_path)
 
