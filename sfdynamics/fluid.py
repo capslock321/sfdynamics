@@ -8,13 +8,13 @@ import matplotlib.pyplot as plt
 
 from PIL import Image
 
+from .sampler import FieldSampler
 from .interpolation import Interpolation
 
 logger = logging.getLogger(__name__)
 
 
 class FluidDynamics(object):
-
     def __init__(self, inflow_quantity: np.ndarray, velocity_field: np.ndarray = None):
         """A Python implementation of a fluid dynamics solver.
 
@@ -32,14 +32,18 @@ class FluidDynamics(object):
             velocity_field: The initial velocity field. Can be None.
         """
         self.inflow_quantity: np.ndarray = inflow_quantity
-        # self.coordinates: np.ndarray = np.indices(inflow_quantity.shape)
         self.coordinates: np.ndarray = self._build_coordinates(inflow_quantity.shape)
+
+        # self.advect_velocity: bool = advect_velocity
 
         self.current_timestamp: float = 0.0
         if velocity_field is not None:
             self.velocity_field: np.ndarray = velocity_field.astype(np.float64)
         else:
             self.velocity_field: np.ndarray = np.zeros(self.coordinates.shape)
+
+        self.divergence_field: np.ndarray = np.zeros(inflow_quantity.shape)  # (HEIGHT, WIDTH)
+        self.pressure_field: np.ndarray = np.zeros(inflow_quantity.shape)  # (HEIGHT, WIDTH)
 
     def _build_coordinates(self, coordinates_shape: tuple) -> np.ndarray:
         """Builds the coordinate plane.
@@ -69,6 +73,29 @@ class FluidDynamics(object):
         V[:, 0] = -V[:, 1]
         V[:, V.shape[1] - 1] = -V[:, V.shape[1] - 2]
         return U, V
+
+    def enforce_boundaries(self, U: np.ndarray, V: np.ndarray):
+        # Very dirty implementation
+        U[0] = 0
+        U[U.shape[0] - 1] = 0
+        V[0] = 0
+        V[V.shape[0] - 1] = 0
+
+        U[:, 0] = 0
+        U[:, U.shape[1] - 1] = 0
+        V[:, 0] = 0
+        V[:, V.shape[1] - 1] = 0
+        return U, V
+
+    def compute_divergence(self, velocity_field: np.ndarray) -> np.ndarray:
+        u_velocity, v_velocity = velocity_field.astype(np.float64)
+
+        divergence_u = np.gradient(u_velocity, axis=0)
+        divergence_v = np.gradient(v_velocity, axis=1)
+        return np.add(divergence_u, divergence_v)
+
+    def compute_pressure(self):
+        ...
 
     def advect(self, field: np.ndarray, indices: np.ndarray, timestep: float) -> np.ndarray:
         """Advects the given field given a list of coordinates.
@@ -113,8 +140,9 @@ class FluidDynamics(object):
         # u_velocity, v_velocity = self.enforce_velocity_boundaries(u_velocity, v_velocity)
         advected_u = self.advect(u_velocity, self.velocity_field, timestep)
         advected_v = self.advect(v_velocity, self.velocity_field, timestep)
-        # comment out velocity_field update line to stop advecting velocity field. DEBUG!
         self.velocity_field = np.array([advected_u, advected_v])
+
+        self.divergence_field = self.compute_divergence(self.velocity_field)
         self.inflow_quantity = self.advect(self.inflow_quantity, self.velocity_field, timestep)
 
         logger.debug(f"Stepping forward with timestep {timestep:.4f}.")
@@ -132,7 +160,8 @@ class FluidDynamics(object):
         Args:
             output_path: The location to save the rendered frame to.
 
-        """        fluid_map = np.rollaxis(np.clip(self.inflow_quantity, 0, 1), 1)
+        """
+        fluid_map = np.rollaxis(np.clip(self.inflow_quantity, 0, 1), 1)
         image = Image.fromarray(fluid_map * 255).convert("RGB")
         return image.save(output_path)
 

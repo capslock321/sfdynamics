@@ -89,6 +89,13 @@ def equation(indices: np.ndarray, step: int = 16) -> np.ndarray:
     return np.array([X_field, Y_field])
 
 
+def equation(indices: np.ndarray, step: int = 16) -> np.ndarray:
+    x, y = indices.astype(np.float64)
+    x, y = x[::step, ::step], y[::step, ::step]
+    X_field = scipy.ndimage.zoom(-y, step)
+    Y_field = scipy.ndimage.zoom(x, step)
+    return np.array([X_field, Y_field])
+
 def render_gif(image_path: Union[str, Path], output_path: Union[str, Path]) -> None:
     images = []
     for image in sorted(Path(image_path).iterdir(), key=os.path.getmtime):
@@ -113,7 +120,7 @@ def archive_storage(origin_path, archive_path, archive_limit: int = 10):
 
 def main(frames: int = 100, timestep: float = 1 / 240):
     fluid = FluidDynamics(inflow_dye)
-    fluid.velocity_field = equation(fluid.coordinates, 8)
+    fluid.velocity_field = equation(fluid.coordinates, 1)
 
     fluid.render_fluid("./examples/initial_position.png")
     fluid.build_plot("./examples/initial_field.png", grid_step=4)
@@ -140,11 +147,12 @@ if __name__ == "__main__":
     reset_storage("./examples/velocity_storage")
 
     archive_storage(
-        "./examples/rendered_fluids", f"./examples/archive/archived_fluids/archived_fluids_{int(time.time())}"
+        origin_path="./examples/rendered_fluids",
+        archive_path=f"./examples/archive/archived_fluids/archived_fluids_{int(time.time())}"
     )
     archive_storage(
-        "./examples/rendered_velocities",
-        f"./examples/archive/archived_velocities/archived_velocities_{int(time.time())}",
+        origin_path="./examples/rendered_velocities",
+        archive_path=f"./examples/archive/archived_velocities/archived_velocities_{int(time.time())}",
     )
-    main(frames=100, timestep=1 / 240)
+    main(frames=50, timestep=1 / 240)
     logger.info(f"Fluid rendered in {time.time() - start:.2f} seconds.")
