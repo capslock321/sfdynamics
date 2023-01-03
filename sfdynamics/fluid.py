@@ -94,10 +94,10 @@ class FluidDynamics(object):
         divergence_v = np.gradient(v_velocity, axis=1)
         return np.add(divergence_u, divergence_v)
 
-    def compute_pressure(self):
+    def compute_pressure(self, field: np.ndarray, rhs: np.ndarray, max_iterations: int = 100):
         ...
 
-    def advect(self, field: np.ndarray, indices: np.ndarray, timestep: float) -> np.ndarray:
+    def advect(self, field: np.ndarray, indices: np.ndarray, delta_t: float) -> np.ndarray:
         """Advects the given field given a list of coordinates.
 
         This uses the implicit (backwards) Euler method to advect the field. The timestep is multiplied
@@ -107,17 +107,65 @@ class FluidDynamics(object):
         Args:
             field (np.ndarray): The field to advect. The field requires a 2D array.
             indices (np.ndarray): The coordinates of each particle. This requires a np.indices like shape.
-            timestep (float): The timestep.
+            delta_t (float): The timestep.
 
         Returns:
             np.ndarray: The advected field. The resulting shape is the same as the field.
         """
-        # This uses the backwards Euler method. (implicit Euler)
-        delta_t = timestep * np.min(self.inflow_quantity.shape)  # Some speedup in simulation time
+        # delta_t = delta_t * np.min(self.inflow_quantity.shape)  # Some speedup in simulation time
+        # If simulation seems to be splitting apart, use the timestep directly for more stability
         advection_coordinates = self.coordinates - (indices * delta_t)
 
         # Bilerp the velocity fields, then apply the difference to the field.
         return Interpolation.bilinear_interpolation(field, advection_coordinates)
+
+    def jacobi(self, alpha: int = -1, beta: float = 0.25, max_iterations: int = 16):
+        """
+        for(i = 0; i < iterations; i++) {
+            for(var y = 1; y < HEIGHT-1; y++) {
+                for(var x = 1; x < WIDTH-1; x++) {
+                    var x0 = p0(x-1, y),
+                        x1 = p0(x+1, y),
+                        y0 = p0(x, y-1),
+                        y1 = p0(x, y+1);
+                    p1(x, y, (x0 + x1 + y0 + y1 + alpha * b(x, y)) * beta);
+                }
+        }
+        """
+        x_coordinates, y_coordinates = self.coordinates.astype(int)
+        for iteration in range(max_iterations):
+            x0 = FieldSampler.sample(self.pressure_field, x_coordinates - 1, y_coordinates - 0)
+            x1 = FieldSampler.sample(self.pressure_field, x_coordinates + 1, y_coordinates + 0)
+            y0 = FieldSampler.sample(self.pressure_field, x_coordinates - 0, y_coordinates - 1)
+            y1 = FieldSampler.sample(self.pressure_field, x_coordinates + 0, y_coordinates + 1)
+            divergence = FieldSampler.sample(self.divergence_field, x_coordinates, y_coordinates)
+            self.pressure_field = (x0 + x1 + y0 + y1 + alpha * divergence) * beta
+        return self.pressure_field
+
+    def subtract_pressure(self, velocity_field: np.ndarray):
+        """
+        function subtractPressureGradient(ux, uy, p){
+            for(var y = 1; y < HEIGHT-1; y++) {
+                for(var x = 1; x < WIDTH-1; x++) {
+                    var x0 = p(x-1, y),
+                        x1 = p(x+1, y),
+                        y0 = p(x, y-1),
+                        y1 = p(x, y+1),
+                        dx = (x1-x0)/2,
+                        dy = (y1-y0)/2;
+                        ux(x, y, ux(x, y)-dx);
+                        uy(x, y, uy(x, y)-dy);
+                }
+            }
+        }
+        """
+        x_coordinates, y_coordinates = self.coordinates.astype(int)
+        x0 = FieldSampler.sample(self.pressure_field, x_coordinates - 1, y_coordinates - 0)
+        x1 = FieldSampler.sample(self.pressure_field, x_coordinates + 1, y_coordinates + 0)
+        y0 = FieldSampler.sample(self.pressure_field, x_coordinates - 0, y_coordinates - 1)
+        y1 = FieldSampler.sample(self.pressure_field, x_coordinates + 0, y_coordinates + 1)
+        dx, dy = (x1 - x0) / 2, (y1 - y0) / 2
+        return velocity_field[0] - dx, velocity_field[1] - dy
 
     def step(self, timestep: float = 1 / 240) -> Tuple[np.ndarray, np.ndarray]:
         """Steps forward in time.
@@ -137,12 +185,13 @@ class FluidDynamics(object):
         logger.info(f"Current timestamp: {self.current_timestamp:.4f}.")
 
         u_velocity, v_velocity = self.velocity_field.astype(np.float64)
-        # u_velocity, v_velocity = self.enforce_velocity_boundaries(u_velocity, v_velocity)
         advected_u = self.advect(u_velocity, self.velocity_field, timestep)
         advected_v = self.advect(v_velocity, self.velocity_field, timestep)
         self.velocity_field = np.array([advected_u, advected_v])
 
         self.divergence_field = self.compute_divergence(self.velocity_field)
+        self.jacobi(-1, 0.25, max_iterations=100)
+        self.velocity_field = np.array(self.subtract_pressure(self.velocity_field))
         self.inflow_quantity = self.advect(self.inflow_quantity, self.velocity_field, timestep)
 
         logger.debug(f"Stepping forward with timestep {timestep:.4f}.")

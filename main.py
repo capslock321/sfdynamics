@@ -37,7 +37,7 @@ RESOLUTION = 8, 8
 
 # Creates a checkerboard pattern
 inflow_dye = np.indices(RESOLUTION).sum(axis=0) % 2
-inflow_dye = np.kron(inflow_dye, np.ones((16, 16)))
+inflow_dye = np.kron(inflow_dye, np.ones((32, 32)))
 inflow_dye = inflow_dye.astype(np.uint8)
 
 # REMEMBER, FOR STUFF LIKE SIN AND COS, CONVERT TO DEGREES!
@@ -124,7 +124,6 @@ def main(frames: int = 100, timestep: float = 1 / 240):
 
     fluid.render_fluid("./examples/initial_position.png")
     fluid.build_plot("./examples/initial_field.png", grid_step=4)
-    logger.debug(f"Velocity Map:\n{fluid.velocity_field}")
     for iteration in range(frames):
         logger.info(f"\x1b[0;33mCurrently rendering frame number {iteration + 1} of {frames}.\x1b[0;0m")
         # It's recommended to not have a timestamp that is greater than 1 / 120.
@@ -154,5 +153,5 @@ if __name__ == "__main__":
         origin_path="./examples/rendered_velocities",
         archive_path=f"./examples/archive/archived_velocities/archived_velocities_{int(time.time())}",
     )
-    main(frames=50, timestep=1 / 240)
+    main(frames=200, timestep=1 / 60)
     logger.info(f"Fluid rendered in {time.time() - start:.2f} seconds.")
