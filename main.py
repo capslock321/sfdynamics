@@ -37,7 +37,7 @@ RESOLUTION = 8, 8
 
 # Creates a checkerboard pattern
 inflow_dye = np.indices(RESOLUTION).sum(axis=0) % 2
-inflow_dye = np.kron(inflow_dye, np.ones((16, 16)))
+inflow_dye = np.kron(inflow_dye, np.ones((8, 8)))
 inflow_dye = inflow_dye.astype(np.uint8)
 
 # REMEMBER, FOR STUFF LIKE SIN AND COS, CONVERT TO DEGREES!
@@ -95,6 +95,7 @@ def equation(indices: np.ndarray, step: int = 16) -> np.ndarray:
     X_field = scipy.ndimage.zoom(-y, step)
     Y_field = scipy.ndimage.zoom(x, step)
     return np.array([X_field, Y_field])
+
 
 def render_gif(image_path: Union[str, Path], output_path: Union[str, Path]) -> None:
     images = []

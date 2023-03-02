@@ -1,14 +1,14 @@
 import logging
 
 from pathlib import Path
-from typing import Union, Tuple
+from typing import Union, Tuple, Any
 
 import numpy as np
 import matplotlib.pyplot as plt
 
 from PIL import Image
+from numpy import ndarray
 
-from .sampler import FieldSampler
 from .interpolation import Interpolation
 
 logger = logging.getLogger(__name__)
@@ -34,8 +34,7 @@ class FluidDynamics(object):
         self.inflow_quantity: np.ndarray = inflow_quantity
         self.coordinates: np.ndarray = self._build_coordinates(inflow_quantity.shape)
 
-        # self.advect_velocity: bool = advect_velocity
-        self.laplacian_matrix: np.ndarray = self._build_laplacian(4)
+        self.laplacian_matrix: np.ndarray = self._build_laplacian(2, 0)
 
         self.current_timestamp: float = 0.0
         if velocity_field is not None:
@@ -57,12 +56,29 @@ class FluidDynamics(object):
             np.ndarray: The built coordinate plane.
         """
         midpoint = [axis // 2 for axis in coordinates_shape]  # x // 2, y // 2
-        return np.mgrid[-midpoint[0]: midpoint[0], -midpoint[1]: midpoint[1]]
+        return np.mgrid[-midpoint[0] : midpoint[0], -midpoint[1] : midpoint[1]]
 
-    def _build_laplacian(self, derivative_order: int) -> np.ndarray:
-        stencil_range = np.ceil(derivative_order / 2).astype(int)
-        laplacian_stencil = range(-stencil_range, stencil_range + 1)
-        return np.linalg.inv(np.vander(laplacian_stencil))
+    def _compute_differences(self, derivative_order: int, accuracy: int) -> tuple[Any, ndarray]:
+        stencil_range = accuracy + np.ceil(derivative_order / 2).astype(int)
+        laplacian_stencil = np.arange(-stencil_range, stencil_range + 1)
+        coefficients = np.flipud(np.vander(laplacian_stencil).transpose())
+
+        rhs = np.zeros((coefficients.shape[0],))
+        rhs[derivative_order] = np.math.factorial(derivative_order)
+        return np.linalg.solve(coefficients, rhs), laplacian_stencil
+
+    def _build_laplacian(self, derivative: int = 2, accuracy: int = 0) -> np.ndarray:
+        laplacian_matrix = np.zeros((self.inflow_quantity.shape[0],) * 2)
+        coefficients, stencil = self._compute_differences(derivative, accuracy)
+
+        for coefficient, offset in zip(coefficients, stencil):
+            rows, columns = np.indices(self.inflow_quantity.shape)
+
+            row_diagonal, col_diagonal = np.diag(rows, k=offset), np.diag(columns, k=offset)
+            laplacian_matrix[row_diagonal, col_diagonal] = coefficient
+
+        laplacian_eye = np.eye(self.inflow_quantity.shape[0])
+        return np.add(np.kron(laplacian_eye, laplacian_matrix), np.kron(laplacian_matrix, laplacian_eye))
 
     def compute_divergence(self, velocity_field: np.ndarray) -> np.ndarray:
         u_velocity, v_velocity = velocity_field.astype(np.float64)
