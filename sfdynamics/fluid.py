@@ -6,7 +6,7 @@ from typing import Union, Tuple, Any
 import numpy as np
 import matplotlib.pyplot as plt
 
-from PIL import Image, ImageOps
+from PIL import Image
 from numpy import ndarray
 
 from .interpolation import Interpolation
