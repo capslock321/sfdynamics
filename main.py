@@ -30,8 +30,8 @@ logging.getLogger("PIL").setLevel(logging.WARNING)  # Debug
 # RESOLUTION = 4, 4
 RESOLUTION = 8, 8
 # RESOLUTION = 16, 16
-# RESOLUTION = 32, 32  # test resolution
-# RESOLUTION = 64, 64  # PROD Resolution
+# RESOLUTION = 32, 32
+# RESOLUTION = 64, 64
 # RESOLUTION = 128, 128
 # RESOLUTION = 256, 256
 
@@ -40,56 +40,8 @@ inflow_dye = np.indices(RESOLUTION).sum(axis=0) % 2
 inflow_dye = np.kron(inflow_dye, np.ones((8, 8)))
 inflow_dye = inflow_dye.astype(np.uint8)
 
-# REMEMBER, FOR STUFF LIKE SIN AND COS, CONVERT TO DEGREES!
 
-"""
-def equation(indices: np.ndarray):
-    # multiple circles, extremely weird map
-    x, y = indices.astype(np.float64)
-    X_field = np.sin(x) + np.sin(y)
-    Y_field = np.sin(x) - np.sin(y)
-    return np.array([X_field, Y_field])
-
-
-def equation(indices: np.ndarray, step: int):
-    # multiple circles, extremely weird map
-    x, y = indices.astype(np.float64)
-    x, y = x[::step, ::step], y[::step, ::step]
-    X_field = scipy.ndimage.zoom(np.sin(np.rad2deg(np.pi * y)), step)
-    Y_field = scipy.ndimage.zoom(np.sin(np.rad2deg(np.pi * x)), step)
-    return np.array([X_field, Y_field])
-
-
-def equation(indices: np.ndarray) -> np.ndarray:
-    # high tendency to overflow
-    x, y = indices.astype(np.float64)
-    x_field = x ** 2 - y ** 2 - 4
-    y_field = 2 * x * y
-    return np.array([x_field, y_field])
-
-
-def equation(indices: np.ndarray, step: int = 16) -> np.ndarray:
-    x, y = indices.astype(np.float64)
-    x, y = x[::step, ::step], y[::step, ::step]
-    X_field = scipy.ndimage.zoom(-y, step)
-    Y_field = scipy.ndimage.zoom(x, step)
-    return np.array([X_field, Y_field])
-
-def equation(indices: np.ndarray):
-    x, y = indices.astype(np.float64)
-    return np.array([np.rad2deg(2*np.pi*x), np.zeros(y.shape)])
-"""
-
-
-def equation(indices: np.ndarray, step: int = 16) -> np.ndarray:
-    x, y = indices.astype(np.float64)
-    x, y = x[::step, ::step], y[::step, ::step]
-    X_field = scipy.ndimage.zoom(np.ones(y.shape), step)
-    Y_field = scipy.ndimage.zoom(np.sin(np.rad2deg(2 * np.pi * x)), step)
-    return np.array([X_field, Y_field])
-
-
-def equation(indices: np.ndarray, step: int = 16) -> np.ndarray:
+def generate_initial_velocity(indices: np.ndarray, step: int = 16) -> np.ndarray:
     x, y = indices.astype(np.float64)
     x, y = x[::step, ::step], y[::step, ::step]
     X_field = scipy.ndimage.zoom(-y, step)
@@ -121,7 +73,7 @@ def archive_storage(origin_path, archive_path, archive_limit: int = 10):
 
 def main(frames: int = 100, timestep: float = 1 / 240):
     fluid = FluidDynamics(inflow_dye)
-    fluid.velocity_field = equation(fluid.coordinates, 1)
+    fluid.velocity_field = generate_initial_velocity(fluid.coordinates, 1)
 
     fluid.render_fluid("./examples/initial_position.png")
     fluid.build_plot("./examples/initial_field.png", grid_step=4)
@@ -154,5 +106,5 @@ if __name__ == "__main__":
         origin_path="./examples/rendered_velocities",
         archive_path=f"./examples/archive/archived_velocities/archived_velocities_{int(time.time())}",
     )
-    main(frames=200, timestep=1 / 60)
+    main(frames=100, timestep=1 / 30)
     logger.info(f"Fluid rendered in {time.time() - start:.2f} seconds.")
