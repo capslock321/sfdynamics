@@ -1,6 +1,6 @@
 [project]
 name = "sfdyanmics"
-version = "0.1.1"
+version = "0.1.2"
 description = "A Stable Fluids implementation in Python using Numpy"
 readme = "README.rst"
 requires-python = ">=3.7"
