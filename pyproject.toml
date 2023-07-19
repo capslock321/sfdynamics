@@ -13,7 +13,7 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-dev = [
+runner = [
     "scipy~=1.9.3",
     "imageio~=2.23.0",
 ]

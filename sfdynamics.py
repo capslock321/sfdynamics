@@ -36,7 +36,6 @@ parser.add_argument("frames", help="The amount of frames to generate", type=int,
 parser.add_argument("timestep", help="The timestep, or how fast to simulate", type=float, nargs="?", default=1/240)
 parser.add_argument("resolution", help="The resolution of the simulation.", type=int, nargs="?", default=16)
 
-parser.add_argument("-i", "--initial-velocity", dest="initial_velocity", default="", help="Sets the initial velocity field.")
 parser.add_argument("-z", "--zoom", default=1, dest="zoom", help="Zooms the initial inflow array by the given amount.")
 parser.add_argument("-t", "--temp-path", default=".temp", dest="temp", help="The location where the rendering frames are stored.")
 parser.add_argument("-o", "--output", default="output", dest="output", help="The file path to the final generated GIF.")
