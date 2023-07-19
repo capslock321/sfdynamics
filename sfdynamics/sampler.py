@@ -30,7 +30,7 @@ class FieldSampler(object):
 
         The given field is clamped to prevent overflow and underflow. We subtract
         one from the field's y shape in order for the field to be indexed properly.
-        EG. If you have an array ["one", "two", "three"] you would not index get
+        EG. If you have an array ["one", "two", "three"] you would not index
         the value "three" using array[3], but rather using array[2].
 
         What is x and y being added with? Since the coordinate field is negative
@@ -55,6 +55,4 @@ class FieldSampler(object):
         # What the hell does ^^^ do? It simply makes a negative number into a positive one.
         bounded_x = cls.clamp(x_coordinates, field.shape[0])
         bounded_y = cls.clamp(y_coordinates, field.shape[1])
-        # bounded_x = np.clip(x_coordinates, 0, field.shape[0] - 1)
-        # bounded_y = np.clip(y_coordinates, 0, field.shape[1] - 1)
         return field[bounded_x, bounded_y]

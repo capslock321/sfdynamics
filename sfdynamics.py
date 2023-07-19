@@ -3,6 +3,7 @@ import sys
 import time
 import shutil
 import logging
+import argparse
 
 from typing import Union
 from pathlib import Path
@@ -26,20 +27,28 @@ matplotlib.use("Agg")  # Pycharm debugging purposes.
 logging.getLogger("matplotlib").setLevel(logging.WARNING)  # Debug
 logging.getLogger("PIL").setLevel(logging.WARNING)  # Debug
 
-# RESOLUTION = 2, 2
-# RESOLUTION = 4, 4
-RESOLUTION = 8, 8
-# RESOLUTION = 16, 16
-# RESOLUTION = 32, 32
-# RESOLUTION = 64, 64
-# RESOLUTION = 128, 128
-# RESOLUTION = 256, 256
+parser = argparse.ArgumentParser(
+    prog="SFDynamics",
+    description="A Python implementation of Stable Fluids",
+    epilog="Stable Fluids is cool",
+)
 
+parser.add_argument("frames", help="The amount of frames to generate", type=int, nargs="?", default=100)
+parser.add_argument("timestep", help="The timestep, or how fast to simulate", type=float, nargs="?", default=1/240)
+parser.add_argument("resolution", help="The resolution of the simulation.", type=int, nargs="?", default=16)
+
+parser.add_argument("-i", "--initial-velocity", dest="initial_velocity", default="", help="Sets the initial velocity field.")
+parser.add_argument("-z", "--zoom", default=1, dest="zoom", help="Zooms the initial inflow array by the given amount.")
+parser.add_argument("-t", "--temp-path", default=".temp", dest="temp", help="The location where the rendering frames are stored.")
+parser.add_argument("-o", "--output", default="output", dest="output", help="The file path to the final generated GIF.")
+
+arguments = parser.parse_args()
+
+RESOLUTION = (arguments.resolution,) * 2
 # Creates a checkerboard pattern
 inflow_dye = np.indices(RESOLUTION).sum(axis=0) % 2
-inflow_dye = np.kron(inflow_dye, np.ones((8, 8)))
+inflow_dye = np.kron(inflow_dye, np.ones((arguments.zoom,) * 2))
 inflow_dye = inflow_dye.astype(np.uint8)
-
 
 def generate_initial_velocity(indices: np.ndarray, step: int = 16) -> np.ndarray:
     x, y = indices.astype(np.float64)
@@ -71,40 +80,25 @@ def archive_storage(origin_path, archive_path, archive_limit: int = 10):
     return archive_path
 
 
-def main(frames: int = 100, timestep: float = 1 / 240):
+def main(frames: int = 100, timestep: float = 1 / 240) -> None:
     fluid = FluidDynamics(inflow_dye)
     fluid.velocity_field = generate_initial_velocity(fluid.coordinates, 1)
 
-    fluid.render_fluid("./examples/initial_position.png")
-    fluid.build_plot("./examples/initial_field.png", grid_step=4)
     for iteration in range(frames):
         logger.info(f"\x1b[0;33mCurrently rendering frame number {iteration + 1} of {frames}.\x1b[0;0m")
         # It's recommended to not have a timestamp that is greater than 1 / 120.
         fluid.step(timestep=timestep)
-        # fluid.build_plot(f"./examples/velocity_storage/velocity_{iteration}.png", grid_step=4)
-        fluid.render_fluid(f"./examples/advection_storage/fluid_{iteration}.png")
+        fluid.render_fluid(f"{arguments.temp}\\fluid_{iteration}.png")
         logger.info(f"Seconds elapsed: {time.time() - start:.2f} seconds.")
 
-    fluid_output = f"./examples/rendered_fluids/output_{int(time.time())}.gif"
-    # velocity_output = f"./examples/rendered_velocities/velocity_{int(time.time())}.gif"
-    render_gif("./examples/advection_storage", fluid_output)
-    # render_gif("./examples/velocity_storage", velocity_output)
+    fluid_output = f"{arguments.output}\\output_{int(time.time())}.gif"
+    return render_gif(arguments.temp, fluid_output) # Returns None
 
 
 if __name__ == "__main__":
     start = time.time()
     logger.info(f"Rendering fluid with shape {inflow_dye.shape}.")
     # The GPU is not being used by Python.
-    reset_storage("./examples/advection_storage")
-    reset_storage("./examples/velocity_storage")
-
-    archive_storage(
-        origin_path="./examples/rendered_fluids",
-        archive_path=f"./examples/archive/archived_fluids/archived_fluids_{int(time.time())}"
-    )
-    archive_storage(
-        origin_path="./examples/rendered_velocities",
-        archive_path=f"./examples/archive/archived_velocities/archived_velocities_{int(time.time())}",
-    )
-    main(frames=100, timestep=1 / 30)
+    reset_storage(arguments.temp) # clears the temporary cache before starting generation
+    main(frames=arguments.frames, timestep=arguments.timestep)
     logger.info(f"Fluid rendered in {time.time() - start:.2f} seconds.")

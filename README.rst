@@ -17,6 +17,12 @@ Afterwards you can just run `sfdynamics.py` and *hopefully* your fluid GIF shoul
 
     python sfdynamics.py
 
+Sources
+----------------------------------
+- Benedikt Bitterli's Incremental Fluids: https://github.com/tunabrain/incremental-fluids
+- GregTJ's Stable Fluids: https://github.com/GregTJ/stable-fluids
+- Jamie Wong's interactive implementation: https://jamie-wong.com/2016/08/05/webgl-fluid-simulation/
+
 Copyright and Licence
 ----------------------------------
 This project is licenced under the MIT licence.
