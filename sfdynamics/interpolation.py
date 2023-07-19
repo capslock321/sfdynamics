@@ -57,5 +57,4 @@ class Interpolation(object):
         top_lerp = cls.linear_interpolation(top_left, top_right, padding_x)
         bottom_lerp = cls.linear_interpolation(bottom_left, bottom_right, padding_x)
 
-        # lerp(lerp(top_left, top_right, x), lerp(bottom_left, bottom_right, x), y)
         return cls.linear_interpolation(bottom_lerp, top_lerp, padding_y)

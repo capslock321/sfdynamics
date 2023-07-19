@@ -30,7 +30,6 @@ logging.getLogger("PIL").setLevel(logging.WARNING)  # Debug
 parser = argparse.ArgumentParser(
     prog="SFDynamics",
     description="A Python implementation of Stable Fluids",
-    epilog="Stable Fluids is cool",
 )
 
 parser.add_argument("frames", help="The amount of frames to generate", type=int, nargs="?", default=100)

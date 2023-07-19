@@ -5,14 +5,11 @@ from typing import Union, Tuple, Any
 
 import numpy as np
 import matplotlib.pyplot as plt
-
 from PIL import Image
-from numpy import ndarray
 
 from .interpolation import Interpolation
 
 logger = logging.getLogger(__name__)
-
 
 class FluidDynamics(object):
     def __init__(
@@ -21,6 +18,7 @@ class FluidDynamics(object):
         initial_velocity: np.ndarray = None,
         advect_velocity: bool = True,
         apply_pressure: bool = True,
+        use_sparse_matrix: bool = False,
     ):
         """A Python implementation of a fluid dynamics solver.
 
@@ -70,7 +68,7 @@ class FluidDynamics(object):
         midpoint = [axis // 2 for axis in coordinates_shape]  # x // 2, y // 2
         return np.mgrid[-midpoint[0] : midpoint[0], -midpoint[1] : midpoint[1]]
 
-    def _compute_differences(self, derivative_order: int, accuracy: int) -> tuple[Any, ndarray]:
+    def _compute_differences(self, derivative_order: int, accuracy: int) -> tuple[Any, np.ndarray]:
         """Computes the central finite differences given the derivative order and accuracy.
 
         This first builds the stencil, which is simply a 1D range of numbers from n to -n, and then constructs
@@ -119,6 +117,8 @@ class FluidDynamics(object):
             laplacian_matrix[row_diagonal, col_diagonal] = coefficient
 
         laplacian_eye = np.eye(self.inflow_quantity.shape[0])
+        # when you calculate with a "high" resolution, numpy will attempt to create an array too big to fit in the RAM
+        # which means that pressure solving of "high" resolutions is impossible using this code in this state.
         return np.add(np.kron(laplacian_eye, laplacian_matrix), np.kron(laplacian_matrix, laplacian_eye))
 
     def compute_divergence(self, velocity_field: np.ndarray) -> np.ndarray:
