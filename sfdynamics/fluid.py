@@ -4,7 +4,6 @@ from pathlib import Path
 from typing import Union, Tuple, Any
 
 import numpy as np
-import matplotlib.pyplot as plt
 from PIL import Image
 
 from .interpolation import Interpolation
@@ -18,7 +17,6 @@ class FluidDynamics(object):
         initial_velocity: np.ndarray = None,
         advect_velocity: bool = True,
         apply_pressure: bool = True,
-        use_sparse_matrix: bool = False,
     ):
         """A Python implementation of a fluid dynamics solver.
 
@@ -223,27 +221,3 @@ class FluidDynamics(object):
         fluid_map = np.rollaxis(np.clip(self.inflow_quantity, 0, 1), 1)
         image = Image.fromarray(fluid_map * 255).convert("L")
         return image.save(output_path)
-
-    def build_plot(self, output_path: Union[Path, str], grid_step: int = 2) -> None:
-        """Visualizes the velocity field.
-
-        Args:
-            output_path (Union[Path, str]): The path to write the resulting graph to.
-            grid_step (int): The step size for the velocity field.
-        """
-        fig, ax = plt.subplots(figsize=(9, 9))
-
-        X, Y = self.coordinates.astype(np.float64)
-        U, V = self.velocity_field.astype(np.float64)
-
-        X, Y = X[::grid_step, ::grid_step], Y[::grid_step, ::grid_step]
-        U, V = U[::grid_step, ::grid_step], V[::grid_step, ::grid_step]
-
-        ax.quiver(X, Y, U, V, color="red")
-
-        ax.axhline(0, color="black")
-        ax.axvline(0, color="black")
-        ax.set_aspect("equal")
-        ax.grid(color="black")
-        plt.savefig(output_path)
-        return plt.close(fig)
