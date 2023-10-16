@@ -36,7 +36,7 @@ parser.add_argument("frames", help="The amount of frames to generate", type=int,
 parser.add_argument("timestep", help="The timestep, or how fast to simulate", type=float, nargs="?", default=1/240)
 parser.add_argument("resolution", help="The resolution of the simulation.", type=int, nargs="?", default=8)
 
-parser.add_argument("-z", "--zoom", default=16, dest="zoom", help="Zooms the initial inflow array by the given amount.")
+parser.add_argument("-z", "--zoom", default=8, dest="zoom", help="Zooms the initial inflow array by the given amount.")
 parser.add_argument("-t", "--temp-path", default=".temp", dest="temp", help="The location where the rendering frames are stored.")
 parser.add_argument("-o", "--output", default="output", dest="output", help="The file path to the final generated GIF.")
 
@@ -84,8 +84,9 @@ def main(frames: int = 100, timestep: float = 1 / 240) -> None:
 
     for iteration in range(frames):
         logger.info(f"\x1b[0;33mCurrently rendering frame number {iteration + 1} of {frames}.\x1b[0;0m")
-        # It's recommended to not have a timestep that is greater than 1 / 120.
+
         fluid.step(timestep=timestep)
+
         fluid.render_fluid(f"{arguments.temp}\\fluid_{iteration}.png")
         logger.info(f"Seconds elapsed: {time.time() - start:.2f} seconds.")
 
@@ -95,8 +96,9 @@ def main(frames: int = 100, timestep: float = 1 / 240) -> None:
 
 if __name__ == "__main__":
     start = time.time()
-    logger.info(f"Rendering fluid with shape {inflow_dye.shape}.")
-    # The GPU is not being used by Python, meaning that rendering is slow/nonexistent.
     reset_storage(arguments.temp) # clears the temporary cache before starting generation
+
+    logger.info(f"Rendering fluid with shape {inflow_dye.shape}.")
     main(frames=arguments.frames, timestep=arguments.timestep)
+
     logger.info(f"Fluid rendered in {time.time() - start:.2f} seconds.")

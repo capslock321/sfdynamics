@@ -18,16 +18,7 @@ class FluidDynamics(object):
         advect_velocity: bool = True,
         apply_pressure: bool = True,
     ):
-        """A Python implementation of a fluid dynamics solver.
-
-        The inflow_quantity is a 2D array that represents the initial
-        dye positions in the image array. You can call this field the color field.
-
-        The equation is used to build the initial velocity field, which will be advected
-        by itself on every iteration alongside the color field. The equation
-        should be something that can be called, and should take exactly two
-        parameters, the first being a np.ndarray containing all x coordinates obtained from
-        np.indices, and the other containing all y coordinates.
+        """A Python implementation of Stable Fluids by Jos Stam.
 
         Args:
             inflow_quantity: The initial dye positions.
@@ -176,11 +167,6 @@ class FluidDynamics(object):
     def step(self, timestep: float = 1 / 240) -> Tuple[np.ndarray, np.ndarray]:
         """Steps forward in time.
 
-        dt = timestep, also called Delta T
-        U = velocity field full of x coordinates
-        V = velocity field full of y coordinates
-        D = density, or the color map. Here called self.inflow_quantity
-
         Args:
             timestep (float): The amount of time to step forward in time.
 
@@ -210,13 +196,8 @@ class FluidDynamics(object):
     def render_fluid(self, output_path: Union[Path, str]) -> None:
         """Renders the current frame from the color field.
 
-        The color field is first clamped to stay within 0 and 1 and
-        converted into a PIL.Image object, and finally saved to the
-        given path.
-
         Args:
             output_path: The location to save the rendered frame to.
-
         """
         fluid_map = np.rollaxis(np.clip(self.inflow_quantity, 0, 1), 1)
         image = Image.fromarray(fluid_map * 255).convert("L")
